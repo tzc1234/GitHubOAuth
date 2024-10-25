@@ -15,7 +15,7 @@ final class DependencyContainer {
         clientId: "clientId",
         clientSecret: "clientSecret",
         redirectURL: redirectURL,
-        scopes: ["repo", "user"]
+        scopes: ["public_repo", "user"]
     )
     
     private let client = URLSessionHTTPClient(session: .shared)

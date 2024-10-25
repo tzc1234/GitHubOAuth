@@ -9,7 +9,8 @@ import Foundation
 
 final class LoginViewModel: ObservableObject {
     @Published private(set) var token: Token?
-    @Published var errorMessage: String?
+    @Published private(set) var message: String?
+    @Published var showError = false
     
     private let loader: OAuthTokenLoader
     
@@ -24,13 +25,15 @@ final class LoginViewModel: ObservableObject {
     func exchangeForToken(code: String, state: String) {
         Task { @MainActor in
             do {
-                let token = try await loader.exchangeForToken(code: code, state: state)
-                self.token = token
-                errorMessage = nil
-                print("get token success: \(token.assessToken)")
+                token = try await loader.exchangeForToken(code: code, state: state)
+                message = "Success"
+                print("get token success: \(token?.assessToken ?? "")")
             } catch let error {
-                errorMessage = error.localizedDescription
+                message = error.localizedDescription
+                print("get token failure: \(message ?? "")")
             }
+            
+            showError = message != nil
         }
     }
 }
