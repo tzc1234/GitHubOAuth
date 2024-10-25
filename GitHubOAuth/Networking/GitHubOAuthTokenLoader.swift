@@ -1,5 +1,5 @@
 //
-//  OAuthTokenLoader.swift
+//  GitHubOAuthTokenLoader.swift
 //  GitHubOAuth
 //
 //  Created by Tsz-Lung on 25/10/2024.
@@ -41,7 +41,8 @@ struct TokenParamsBuilder {
     }
 }
 
-final class OAuthTokenLoader {
+final class GitHubOAuthTokenLoader: OAuthTokenLoader {
+    private var state: String?
     private let client: HTTPClient
     private let config: OAuthConfig
     
@@ -52,9 +53,12 @@ final class OAuthTokenLoader {
     
     enum Error: Swift.Error {
         case invalidData
+        case invalidState
     }
     
-    func authPageURL(state: String = UUID().uuidString) -> URL? {
+    func authPageURL() -> URL? {
+        let state = UUID().uuidString
+        self.state = state
         let authParams = AuthParamsBuilder(
             clientId: config.clientId,
             redirectURL: config.redirectURL.absoluteString,
@@ -66,6 +70,8 @@ final class OAuthTokenLoader {
     }
     
     func exchangeForToken(code: String, state: String) async throws -> Token {
+        guard self.state == state else { throw Error.invalidState }
+        
         let tokenParams = TokenParamsBuilder(
             clientId: config.clientId,
             clientSecret: config.clientSecret,
@@ -79,7 +85,6 @@ final class OAuthTokenLoader {
             params: tokenParams.params,
             headers: ["Accept": "application/json"]
         )
-        
         let (data, response) = try await client.run(request: endpoint.request)
         return try TokenResponseMapper.map(data, response: response)
     }
