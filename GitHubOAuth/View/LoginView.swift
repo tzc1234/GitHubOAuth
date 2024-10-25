@@ -11,16 +11,20 @@ struct LoginViewContainer: View {
     @ObservedObject var viewModel: LoginViewModel
     
     var body: some View {
-        LoginView(url: viewModel.authPageURL(), errorMessage: viewModel.errorMessage)
+        LoginView(url: viewModel.authPageURL(), errorMessage: $viewModel.errorMessage)
     }
 }
 
 struct LoginView: View {
     @State private var showWebView = false
-    @State private var showAlert = false
+    @State private var showError = false
     
     let url: URL?
-    let errorMessage: String?
+    @Binding var errorMessage: String? {
+        didSet {
+            showError = errorMessage != nil
+        }
+    }
     
     var body: some View {
         VStack {
@@ -38,8 +42,10 @@ struct LoginView: View {
             .background(.blue, in: .rect(cornerRadius: 8))
         }
         .padding()
-        .alert(errorMessage ?? "", isPresented: $showAlert, actions: {
-            Button("OK", role: .cancel) {}
+        .alert(errorMessage ?? "", isPresented: $showError, actions: {
+            Button("OK", role: .cancel) {
+                errorMessage = nil
+            }
         })
         .fullScreenCover(isPresented: $showWebView) {
             if let url {
@@ -51,5 +57,5 @@ struct LoginView: View {
 }
 
 #Preview {
-    LoginView(url: nil, errorMessage: nil)
+    LoginView(url: nil, errorMessage: .constant(nil))
 }

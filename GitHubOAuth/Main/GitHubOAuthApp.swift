@@ -10,25 +10,23 @@ import SwiftUI
 @main
 struct GitHubOAuthApp: App {
     private let dependencies = DependencyContainer()
+    private let viewModel: LoginViewModel
+    
+    init() {
+        self.viewModel = LoginViewModel(loader: dependencies.loader)
+        self.dependencies.deepLinkHandler.add(DeepLink(baseURL: dependencies.redirectURL, action: { [weak viewModel] url in
+            guard let result = GitHubOAuthCodeStateExtractor.extract(from: url) else { return }
+            
+            viewModel?.exchangeForToken(code: result.code, state: result.state)
+        }))
+    }
     
     var body: some Scene {
         WindowGroup {
-            LoginViewContainer(viewModel: LoginViewModel(loader: dependencies.loader))
+            LoginViewContainer(viewModel: viewModel)
+                .onOpenURL { url in
+                    dependencies.deepLinkHandler.handleDeepLinkIfPossible(deepLinkURL: url)
+                }
         }
     }
-}
-
-final class DependencyContainer {
-    private let redirectURL = URL(string: "com.tszlung.githuboauth://authentication")!
-    private lazy var config = OAuthConfig(
-        authorizationURL: URL(string: "https://github.com/login/oauth/authorize")!,
-        tokenURL: URL(string: "https://github.com/login/oauth/access_token")!,
-        clientId: "clientId",
-        clientSecret: "clientSecret",
-        redirectURL: redirectURL,
-        scopes: ["repo", "user"]
-    )
-    
-    private let client = URLSessionHTTPClient(session: .shared)
-    private(set) lazy var loader = GitHubOAuthTokenLoader(client: client, config: config)
 }
