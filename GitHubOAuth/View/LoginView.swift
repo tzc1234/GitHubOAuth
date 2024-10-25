@@ -7,8 +7,20 @@
 
 import SwiftUI
 
+struct LoginViewContainer: View {
+    @ObservedObject var viewModel: LoginViewModel
+    
+    var body: some View {
+        LoginView(url: viewModel.authPageURL(), errorMessage: viewModel.errorMessage)
+    }
+}
+
 struct LoginView: View {
     @State private var showWebView = false
+    @State private var showAlert = false
+    
+    let url: URL?
+    let errorMessage: String?
     
     var body: some View {
         VStack {
@@ -17,7 +29,7 @@ struct LoginView: View {
                 .scaledToFit()
             
             Button("Login") {
-                showWebView.toggle()
+                showWebView = url != nil && true
             }
             .font(.title3)
             .padding(.vertical, 8)
@@ -26,12 +38,18 @@ struct LoginView: View {
             .background(.blue, in: .rect(cornerRadius: 8))
         }
         .padding()
+        .alert(errorMessage ?? "", isPresented: $showAlert, actions: {
+            Button("OK", role: .cancel) {}
+        })
         .fullScreenCover(isPresented: $showWebView) {
-            SafariWebView(url: URL(string: "https://www.google.com/")!)
+            if let url {
+                SafariWebView(url: url)
+                    .ignoresSafeArea(.all)
+            }
         }
     }
 }
 
 #Preview {
-    LoginView()
+    LoginView(url: nil, errorMessage: nil)
 }
